@@ -1,0 +1,10 @@
+[flake8]
+max-line-length = 88
+per-file-ignores =
+    # Standard practice to import modules into init files but not use them
+    __init__.py:F401
+extend-ignore =
+    # Allow line break before binary operator
+    W503
+    # Allow whitespace before colon
+    E203

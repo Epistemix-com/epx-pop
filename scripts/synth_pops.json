@@ -1,0 +1,12 @@
+
+{
+    "_comment": "FRED synthetic populations",
+    "RTI_2010": {
+        "default_version": "v4",
+        "versions": {
+            "v4": {
+                "url": "https://synthetic-population-epistemix-usa-2010v4-all.s3.amazonaws.com/FRED-data.tar.gz"
+            }
+        }
+    }
+}
