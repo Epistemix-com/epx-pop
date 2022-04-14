@@ -8,7 +8,7 @@ __all__ = ["read_csv"]
 __author__ = ["Duncan Campbell"]
 
 
-def read_csv(fname, cols, header=None, converters={}) -> pd.DataFrame:
+def read_csv(fname, cols, header=None, converters={}, na_values=[]) -> pd.DataFrame:
     """
     A customized reader for loading comma-separated value (csv) files into
     Pandas DataFrames.
@@ -38,6 +38,9 @@ def read_csv(fname, cols, header=None, converters={}) -> pd.DataFrame:
         integers that specify row locations for a multi-index on the columns
         e.g. [0,1,3]. Intervening rows that are not specified will be skipped
         (e.g. 2 in this example is skipped).
+
+    na_values: list-like
+        Additional strings to recognize as NA/NaN.
 
     Returns
     -------
@@ -72,6 +75,7 @@ def read_csv(fname, cols, header=None, converters={}) -> pd.DataFrame:
         usecols=usecols,
         dtype=dtypes,
         converters=converters,
+        na_values=na_values
     )
 
 

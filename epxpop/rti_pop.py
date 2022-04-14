@@ -19,50 +19,46 @@ num_lines_header = 1
 
 # people.txt files
 people_cols = {
-    "sp_id": (0, "i8"),
-    "sp_hh_id": (1, "i8"),
-    "age": (2, "i8"),
+    "sp_id": (0, "Int64"),
+    "sp_hh_id": (1, "Int64"),
+    "age": (2, "Int64"),
     "sex": (3, "|S1"),
-    "race": (4, "i8"),
-    "relate": (5, "i8"),
-    "school_id": (6, "i8"),
-    "work_id": (7, "i8"),
-}
-people_converter = {
-    6: lambda x: np.nan if x == "X" else int(x),
-    7: lambda x: np.nan if x == "X" else int(x),
+    "race": (4, "Int64"),
+    "relate": (5, "Int64"),
+    "school_id": (6, "Int64"),
+    "work_id": (7, "Int64"),
 }
 
 # gq_people.txt files
 gq_people_cols = {
-    "sp_id": (0, "i8"),
-    "sp_gq_id": (1, "i8"),
-    "age": (2, "i8"),
+    "sp_id": (0, "Int64"),
+    "sp_gq_id": (1, "Int64"),
+    "age": (2, "Int64"),
     "sex": (3, "|S1"),
 }
 
 # schools.txt files
 school_cols = {
-    "sp_id": (0, "i8"),
-    "stco": (1, "i8"),
+    "sp_id": (0, "Int64"),
+    "stco": (1, "Int64"),
     "latitude": (2, "f8"),
     "longitude": (3, "f8"),
     "elevation": (4, "f8"),
 }
 
 alt_school_cols = {
-    "sp_id": (0, "i8"),
-    "stco": (1, "i8"),
+    "sp_id": (0, "Int64"),
+    "stco": (1, "Int64"),
     "latitude": (2, "f8"),
     "longitude": (3, "f8"),
 }
 
 # households.txt
 household_cols = {
-    "sp_id": (0, "i8"),
-    "stcotrbg": (1, "i8"),
-    "race": (2, "i8"),
-    "hh_income": (3, "i8"),
+    "sp_id": (0, "Int64"),
+    "stcotrbg": (1, "Int64"),
+    "race": (2, "Int64"),
+    "hh_income": (3, "Int64"),
     "latitude": (4, "f8"),
     "longitude": (5, "f8"),
     "elevation": (6, "f8"),
@@ -70,11 +66,11 @@ household_cols = {
 
 # workplaces.txt
 workplaces_cols = {
-    "sp_id": (0, "i8"),
+    "sp_id": (0, "Int64"),
     "latitude": (1, "f8"),
     "longitude": (2, "f8"),
     "elevation": (3, "f8"),
-    "zip": (4, "i8"),
+    "zip": (4, "Int64"),
 }
 
 
@@ -195,7 +191,7 @@ class RTISynthPop(SynthPop):
         for dir in dirs:
             PATH_TO_PEOPLE = os.path.join(self.path_to_pop, dir, "people.txt")
             df = read_csv(
-                PATH_TO_PEOPLE, people_cols, header=0, converters=people_converter
+                PATH_TO_PEOPLE, people_cols, header=0, na_values=['X']
             )
             people = pd.concat((people, df))
 
