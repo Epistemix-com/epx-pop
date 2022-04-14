@@ -4,7 +4,7 @@ a module used to represent RTI synthetic populations
 
 import os
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Union
 import pandas as pd
 import numpy as np
 from .pop import SynthPop
@@ -144,6 +144,51 @@ class RTISynthPop(SynthPop):
         self._locations = locations
 
         return self._locations
+
+    def return_location_name(self, fips_codes: Union[str, List[str]]) -> str:
+        """
+        Return a location name associated with a list of FIPS codes.
+
+        Parameters
+        ----------
+        fips : list or string
+            a list of county fips code. Alternatively, a single fips code can
+            be passed.
+
+        Returns
+        -------
+        location_name : string
+            a location name
+
+        Example
+        -------
+
+        >>> from epxpop import RTISynthPop
+        >>> pop = RTISynthPop(country='usa', version='US_2010.v4')
+        >>> pop.return_location_name(['42003'])
+        'Allegheny_County_PA'
+        """
+
+        # process FIPS codes
+        if type(fips_codes) is list:
+            fips_codes = [str(e).zfill(5) for e in fips_codes]
+        elif type(fips_codes) is str:
+            # allow single FIPS code as argument
+            fips_codes = [fips_codes.zfill(5)]
+
+        # sort FIPS codes into an expected order
+        fips_codes.sort()
+
+        # lists are not hashable, so we convert the list to a string
+        reversed_locations = {
+            "-".join(value): key for (key, value) in self.locations.items()
+        }
+
+        try:
+            return reversed_locations["-".join(fips_codes)]
+        except KeyError:
+            msg = f"No location defined by the FIPS codes: {fips_codes}"
+            raise ValueError(msg)
 
     @property
     def county_fips_codes(self) -> Set[str]:
