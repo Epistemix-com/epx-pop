@@ -8,10 +8,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
+## [0.0.0] 5-31-2022
 
-### Changed
-
-### Fixed
-
+Initial release of epx-pop. Note that for versions 0.X.X the public API SHOULD NOT be considered stable.
 
