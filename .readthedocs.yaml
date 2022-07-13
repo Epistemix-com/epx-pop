@@ -10,15 +10,14 @@ build:
   os: ubuntu-20.04
   tools:
     python: "3.8"
+  jobs:
+    # Install epx-pop before building, otherwise docs will fail to build
+    pre_build:
+      - pip install .
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    configuration: docs/conf.py
-
-submodules:
-  include:
-    - docs/doc-shared
-  recursive: true
 
 # Build docs in PDF in addition to HTML
 formats:
@@ -27,4 +26,4 @@ formats:
 # Set project requirements file
 python:
    install:
-   - requirements: docs/requirements.txt
+   - requirements: docs/rtd_requirements.txt
