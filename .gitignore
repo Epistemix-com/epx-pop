@@ -99,5 +99,8 @@ venv.bak/
 .idea/
 .vscode/
 
+# mac
+*.DS_Store
+
 # generated FRED output data used by the unit tests
 fred-results
