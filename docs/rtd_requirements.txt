@@ -5,4 +5,4 @@ recommonmark
 sphinx
 sphinx-rtd-theme
 sphinx_autodoc_typehints
-git+ssh://git@github.com/Epistemix-com/doc-shared@main#egg=doc-shared
+git+https://${GITHUB_USER}:${GITHUB_ACCESS_TOKEN}@github.com/Epistemix-com/doc-shared.git@main

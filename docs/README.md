@@ -5,12 +5,6 @@ The documentation for this project is built with [Sphinx](https://www.sphinx-doc
 
 ## building the docs locally
 
-Ensure you have installed the `doc-shared` submodule dependencies
-
-```shell
-git submodule update --init
-```
-
 Install Sphinx requirements (note this is `docs/requirements.txt` as opposed to
 the project root's `requirements.txt`)
 
