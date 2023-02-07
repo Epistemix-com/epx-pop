@@ -62,10 +62,10 @@ class EpiSynthPop(SynthPop):
     """
 
     def __init__(self, country="usa", version="US_2010.v5", **kwargs):
-    """
-    Initialize a EpiSynthPop object
-    """
-    super().__init__(country=country, version=version, **kwargs)
+        """
+        Initialize a EpiSynthPop object
+        """
+        super().__init__(country=country, version=version, **kwargs)
 
     @property
     def available_locations(self) -> Dict[str, List[str]]:
