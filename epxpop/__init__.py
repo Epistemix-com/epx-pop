@@ -9,6 +9,7 @@ import pytest
 
 from .pop import SynthPop
 from .rti_pop import RTISynthPop
+from .epi_pop import EpiSynthPop
 
 # version
 pkg_root_dir = Path(__file__).parent
