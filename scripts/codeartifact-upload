@@ -1,0 +1,15 @@
+#! /bin/bash
+
+set -e
+
+pip install twine
+
+echo "Building distribution"
+python -m build
+
+echo "Publishing wheel to AWS CodeArtifact"
+aws codeartifact login --tool twine --domain epistemix --repository epistemix-engineering
+
+twine upload --repository codeartifact dist/*
+
+echo "Success: epx-pop published to AWS CodeArtifact"

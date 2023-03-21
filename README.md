@@ -2,13 +2,11 @@
 
 epx-pop is a Python package for interacting with [FRED](https://docs.epistemix.com/projects/language/en/latest/) synthetic populations.
 
-
 ## Requirements
 
 In order to use the functions and classes in this package, you will need the following Python packages installed:
 
 - [pandas](https://pandas.pydata.org)
-
 
 ## Installation
 
@@ -103,3 +101,11 @@ page](https://github.com/Epistemix-com/epx-pop) click:
 
 Name the release something like 'epx-pop v1.0.0', and copy the release notes
 from the `CHANGELOG.md` into the description box.
+
+### Packaging
+
+To publish a new version of `epx-pop` to AWS CodeArtifact run the script
+
+```shell
+scripts/codeartifact-upload
+```
