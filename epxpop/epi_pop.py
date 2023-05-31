@@ -10,8 +10,31 @@ import numpy as np
 from .pop import SynthPop
 from .utils import read_csv, line_count
 
+import plotly.express as px
+
 __all__ = ["EpiSynthPop"]
 __author__ = ["Claire Dickey"]
+
+## mapping of race column to categories
+race_map = {
+    -1 : 'Unspecified',
+     0 : 'Unknown',
+     1 : 'White',
+     2 : 'African American',
+     3 : 'American Indian',
+     4 : 'Alaska Native',
+     5 : 'Tribal',
+     6 : 'Asian',
+     7 : 'Hawaiian Native',
+     8 : 'Other Race',
+     9 : 'Multiple Races'
+}
+
+sex_map = {
+    0 : 'Female',
+    1 : 'Male',
+}
+
 
 class EpiSynthPop(SynthPop):
     """
@@ -49,6 +72,10 @@ class EpiSynthPop(SynthPop):
         load a DataFrame of workplaces
     load_households :
         load a DataFrame of households
+    summarize_demographics :
+        return demographic distributions and visualizations
+    visualize_households :
+        return a geospatial map of households in location
 
     Examples
     --------
@@ -438,3 +465,137 @@ class EpiSynthPop(SynthPop):
                 dirs.update(set(self.locations[loc]))
 
         return dirs
+
+    def summarize_demographics(
+        self, location: str, include_visualization : bool = True, 
+        include_gq_people: bool = False) -> pd.DataFrame:
+        """
+        return a dataframe that summarizes the agent demographics
+        for the given location.
+        
+        currently accepts a single location only
+        
+        Parameters
+        ----------
+        location : str
+        include_visualization : bool
+            show bar charts representing distribution of each attribute
+        include_gq_people : bool
+            include people associated with group quarters
+        Returns
+        -------
+        demographics : pd.DataFrame
+            a Pandas DataFrame summarizing demographics. returned dataframe 
+            has three columns:
+            - attribute [Age, Sex, Race]
+            - value [categorical for sex and race, 10 year bins for age]
+            - agent counts [number of synthetic agents with the attribute value]
+        Examples
+        --------
+        A DataFrame of demographic distributions can be generated as follows:
+        >>> from epxpop import EpiSynthPop
+        >>> pop = EpiSynthPop()
+        >>> demographics = pop.summarize_demographics(location='Washtenaw_County_MI')
+        """
+        if location in self.county_fips_codes:
+            loc = location
+        else:
+            loc = self.locations[location][0]
+        df = self.load_people(locations=[loc], include_gq_people=include_gq_people)
+        df["agent_counts"] = 1
+
+        demographics = pd.DataFrame()
+        counts  = df.groupby("race").agent_counts.sum().to_frame().reset_index()
+        counts["value"] = counts.race.map(race_map)
+        counts["attribute"] = "Race"
+        demographics = pd.concat([demographics, counts.drop(columns=["race"])], ignore_index=True)
+        
+        counts  = df.groupby("sex").agent_counts.sum().to_frame().reset_index()
+        counts["value"] = counts.sex.map(sex_map)
+        counts["attribute"] = "Sex"
+        demographics = pd.concat([demographics, counts.drop(columns=["sex"])], ignore_index=True)
+        
+        df["age_bins"] = pd.cut(df.AGE, bins=np.arange(0,101,10))
+        counts = df.age_bins.value_counts().to_frame().reset_index().sort_values("age_bins")
+        counts = counts.rename(columns={"count":"agent_counts", "age_bins":"value"})
+        counts["value"] = counts.value.astype(str)
+        counts["attribute"] = "Age"
+        demographics = pd.concat([demographics, counts], ignore_index=True)
+
+        if include_visualization:
+            fig1 = px.bar(demographics[demographics.attribute=="Race"], x="value", y="agent_counts")
+            fig1.update_layout(
+                font_family="Epistemix Label",
+                yaxis_title="Agent counts",
+                xaxis_title="Race",)
+            fig1.show()
+
+            fig2 = px.bar(demographics[demographics.attribute=="Sex"], x="value", y="agent_counts")
+            fig2.update_layout(
+                font_family="Epistemix Label",
+                yaxis_title="Agent counts",
+                xaxis_title="Sex",)
+            fig2.show()
+
+            fig3 = px.bar(demographics[demographics.attribute=="Age"], x="value", y="agent_counts")
+            fig3.update_layout(
+                font_family="Epistemix Label",
+                yaxis_title="Agent counts",
+                xaxis_title="Age",)
+            fig3.show()
+
+        return demographics
+
+    def visualize_households(self, location, color : str = None):
+        """
+        return a dataframe that summarizes the agent demographics
+        for the given location. For populations over with more than 50k agents, 
+        a random subsample will be selected for display to preserve memory.
+        Parameters
+        ----------
+        location : str
+        Examples
+        --------
+        A DataFrame of demographic distributions can be generated as follows:
+        >>> from epxpop import EpiSynthPop
+        >>> pop = EpiSynthPop()
+        >>> pop.visualize_households(location='Washtenaw_County_MI', color="race")
+        Both fips codes and properly formatted location names are valid inputs.
+        """
+        valid_attributes = [None, "age", "sex", "race", "household_income"]
+        if color not in valid_attributes:
+            print(color+" is not a valid attribute.")
+            print("Select from: None, 'age', 'sex', 'race', or 'household_income'")
+            return
+
+        if location in self.county_fips_codes:
+            loc = location
+        else:
+            loc = self.locations[location][0]
+
+        people = self.load_people([loc], include_gq_people=False)
+        households = self.load_households([loc])
+        people_households = pd.read_csv(self.path_to_pop+'/'+loc+'/person-household.txt')
+
+        households = households.rename(columns={"ID":"PLACE"}).drop(columns="income")
+        people_households = people_households.drop(columns="ROLE")
+        people = (people.rename(columns={"ID":"PERSON", "AGE":"age"})
+                  .drop(columns="household_relationship"))
+        
+        people_households = people_households.merge(households, on="PLACE")
+        people_households = people_households.merge(people, on="PERSON")
+
+        people_households["race"] = people_households.race.map(race_map)
+
+        if len(people_households)>50000:
+            people_households = people_households.sample(50000)
+            
+        fig = px.scatter_mapbox(people_households, lat="LAT", lon="LON",color=color,height=600, zoom=9.25)
+
+        mapstyle="mapbox://styles/pnowell/cl4n9fic8001i15mnfmozrt8j"
+        token="pk.eyJ1IjoicG5vd2VsbCIsImEiOiJja201bHptMXkwZnQyMnZxcnFveTVhM2tyIn0.Pyarp9gHCON4reKvM2fZZg"
+
+        fig.update_layout(mapbox_style=mapstyle, mapbox_accesstoken=token)
+        fig.update_layout(margin={"r":10,"t":10,"l":10,"b":10})
+        fig.show()
+        return
