@@ -48,15 +48,15 @@ class SynthPop(object):
 
     Attributes
     ----------
-    available_locations : dict
-        a dictionary of available locations and corresponding FIPS codes
     locations : dict
-        a dictonary of all valid locations and associated directories
+        a dictonary of all available locations and associated FIPS codes
     county_fips_codes : set[str]
         the set of all county FIPS codes
 
     Methods
     -------
+    return_location_name :
+        return the location name associated with a list of FIPS codes.
     load_people :
         load a DataFrame of people
     load_gq_people :
@@ -92,23 +92,6 @@ class SynthPop(object):
         Initialize a SynthPop object
         """
         self.path_to_pop = _path_to_fred_pop(country=country, version=version, **kwargs)
-
-    @property
-    def available_locations(self) -> Dict[str, List[str]]:
-        """
-        a list of available FIPS code locations in the synthetic population
-        """
-        PATH_TO_POP_COUNTRY = Path(self.path_to_pop)
-        fips = os.listdir(PATH_TO_POP_COUNTRY)
-        fips.remove('metadata')
-        
-        available_locations = {}
-        for i in fips:
-            key = self.return_location_name(i)
-            available_locations[key] = [i]
-        self._available_locations = available_locations
-        
-        return self._available_locations
 
     @property
     def locations(self) -> Dict[str, List[str]]:
