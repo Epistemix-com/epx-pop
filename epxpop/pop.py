@@ -100,13 +100,11 @@ class SynthPop(object):
         """
     
         locations = {}
-        locations_fname = "metadata/locations.txt"
-        PATH_TO_POP_COUNTRY = Path(self.path_to_pop)
         
-        available_locations = os.listdir(PATH_TO_POP_COUNTRY)
+        available_locations = os.listdir(Path(self.path_to_pop))
         available_locations.remove('metadata')
         
-        with open(os.path.join(PATH_TO_POP_COUNTRY, "metadata/locations.txt")) as f:
+        with open(os.path.join(Path(self.path_to_pop), "metadata/locations.txt")) as f:
             for line in f:
                 key, value = line.split(" ", 1)
                 key = key.strip()
@@ -200,11 +198,7 @@ class SynthPop(object):
 
         # loop over directories, loading people.txt into a data frame
         for dir in dirs:
-            PATH_TO_PEOPLE = os.path.join(self.path_to_pop, dir, "person.txt")
-            #df = read_csv(
-            #    PATH_TO_PEOPLE, people_cols, header=0, na_values=['X']
-            #)
-            df = pd.read_csv(PATH_TO_PEOPLE)
+            df = pd.read_csv(os.path.join(self.path_to_pop, dir, "person.txt"))
             people = pd.concat((people, df), ignore_index=True)
 
         if include_gq_people:
@@ -244,9 +238,7 @@ class SynthPop(object):
 
         # loop over directories, loading gq_people.txt into a data frame
         for dir in dirs:
-            PATH_TO_PEOPLE = os.path.join(self.path_to_pop, dir, "gq_person.txt")
-            #df = read_csv(PATH_TO_PEOPLE, gq_people_cols, header=0)
-            df = pd.read_csv(PATH_TO_PEOPLE)
+            df = pd.read_csv(os.path.join(self.path_to_pop, dir, "gq_person.txt"))
             gq_people = pd.concat((gq_people, df), ignore_index=True)
 
         return gq_people
@@ -281,8 +273,7 @@ class SynthPop(object):
 
         n = 0
         for dir in dirs:
-            PATH_TO_PEOPLE = os.path.join(self.path_to_pop, dir, "person.txt")
-            n = n + len(pd.read_csv(PATH_TO_PEOPLE))
+            n = n + len(pd.read_csv(os.path.join(self.path_to_pop, dir, "person.txt")))
 
         if include_gq_people:
             n = n + self.gq_population_count(locations)
@@ -317,8 +308,7 @@ class SynthPop(object):
 
         n = 0
         for dir in dirs:
-            PATH_TO_GQ_PEOPLE = os.path.join(self.path_to_pop, dir, "gq_person.txt")
-            n = n + len(pd.read_csv(PATH_TO_GQ_PEOPLE))
+            n = n + len(pd.read_csv(os.path.join(self.path_to_pop, dir, "gq_person.txt")))
 
         return n
 
@@ -351,9 +341,7 @@ class SynthPop(object):
 
         # loop over directories, loading schools.txt into a data frame
         for dir in dirs:
-            PATH_TO_SCHOOLS = os.path.join(self.path_to_pop, dir, "school.txt")
-            #df = read_csv(PATH_TO_SCHOOLS, school_cols, header=0)
-            df = pd.read_csv(PATH_TO_SCHOOLS)
+            df = pd.read_csv(os.path.join(self.path_to_pop, dir, "school.txt"))
             schools = pd.concat((schools, df), ignore_index=True)
 
         return schools.drop_duplicates()
@@ -387,9 +375,7 @@ class SynthPop(object):
 
         # loop over directories, loading workplaces.txt into a data frame
         for dir in dirs:
-            PATH_TO_WORKPLACES = os.path.join(self.path_to_pop, dir, "workplace.txt")
-            #df = read_csv(PATH_TO_WORKPLACES, workplaces_cols, header=0)
-            df = pd.read_csv(PATH_TO_WORKPLACES)
+            df = pd.read_csv(os.path.join(self.path_to_pop, dir, "workplace.txt"))
             workplaces = pd.concat((workplaces, df), ignore_index=True)
 
         return workplaces.drop_duplicates()
@@ -423,9 +409,7 @@ class SynthPop(object):
 
         # loop over directories, loading households.txt into a data frame
         for dir in dirs:
-            PATH_TO_HOUSEHOLDS = os.path.join(self.path_to_pop, dir, "household.txt")
-            #df = read_csv(PATH_TO_HOUSEHOLDS, household_cols, header=0)
-            df = pd.read_csv(PATH_TO_HOUSEHOLDS)
+            df = pd.read_csv(os.path.join(self.path_to_pop, dir, "household.txt"))
             households = pd.concat((households, df), ignore_index=True)
 
         return households
