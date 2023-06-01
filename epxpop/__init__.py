@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from .rti_pop import RTISynthPop
-from .epi_pop import SynthPop
+from .pop import SynthPop
 
 # version
 pkg_root_dir = Path(__file__).parent
