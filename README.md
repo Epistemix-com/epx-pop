@@ -50,8 +50,11 @@ When actively working on this package, it is often convenient to install
 epx-exec in an environment in "editable" mode using the `-e` option to `pip`:
 
 ```shell
-pip install -e .
+pip install -e .\[dev\]
 ```
+
+Note that specifying `.\[dev\]` causes the development dependencies to be
+installed (see `extras_require` in `setup.py`).
 
 ### Release Process
 

@@ -29,7 +29,7 @@ def read(file_name):
 
 VERSION = read("epxpop/VERSION").strip()
 
-dev_requirements = ["tox"]
+dev_requirements = ["tox", "black"]
 
 setup(
     name=PACKAGENAME,
@@ -42,7 +42,7 @@ setup(
         "A package which contains python tools for interacting "
         "with synthetic populations"
     ),
-    install_requires=["pandas", "pytest"],
+    install_requires=["pandas", "plotly", "pytest"],
     extras_require={"dev": dev_requirements},
     packages=find_packages(),
     url="https://github.com/Epistemix-com/epx-pop",
