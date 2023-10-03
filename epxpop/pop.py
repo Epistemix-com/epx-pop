@@ -4,6 +4,7 @@ a module used to represent the Epistemix synthetic population (v5)
 
 import os
 from pathlib import Path
+import re
 from typing import Dict, List, Set, Union
 import pandas as pd
 import numpy as np
@@ -165,7 +166,6 @@ class SynthPop(object):
         self._county_fips_codes = set(sum(self.locations.values(), []))
         return self._county_fips_codes
 
-
     def load_people(
         self, locations: List[str], include_gq_people: bool = True
     ) -> pd.DataFrame:
@@ -190,6 +190,14 @@ class SynthPop(object):
         """
 
         dirs = self._locations_to_dirs(locations)
+        output_cols = [
+            "ID",
+            "AGE",
+            "sex",
+            "race",
+            "household_relationship",
+            "household_income",
+        ]
 
         # generate an empty people data frame
         #types = {key: people_cols[key][1] for key in people_cols.keys()}
@@ -204,9 +212,56 @@ class SynthPop(object):
         if include_gq_people:
             people = pd.concat((people, self.load_gq_people(locations=locations)), ignore_index=True)
 
-        return people
+        # `SynthPop.load_gq_people` includes additional `ROLE`, `PLACE`,
+        # `Block_Group`, and `gq_type` columns because these agents don't have
+        # households that can be used to geo-locate them. Explicitly specifying
+        # output columns ensures output columns are the same for either value
+        # of `include_gq_people`.
+        return people.loc[:, output_cols]
 
-    
+    def load_people_household_xref(self, locations: List[str]) -> pd.DataFrame:
+        """A DataFrame containing a mapping from agent IDs to household IDs for
+        the specified locations.
+
+        Returned columns are:
+            * `ID`: ID of the agent, corresponding to the `ID` field in the
+              table returned by `SynthPop.load_people`
+            * `PLACE`: ID of the person's household
+            * `ROLE`: ID of the person's role within the household
+
+        Notes
+        -----
+        It is possible that `ROLE` duplicates the `household_relationship`
+        column in the `person.txt` file.
+
+        Examples
+        --------
+        >>> person_df = pop.load_people(["Loving_County_TX"], include_gq_people=False)
+        >>> hh_xref_df = pop.load_people_household_xref(["Loving_County_TX"])
+        >>> person_df.merge(hh_xref_df, on='ID', how='left').head(2)
+                  ID  AGE  sex  race  household_relationship  household_income          PLACE  ROLE
+        0  204941490   45    1     8                       0             32300  1359038290000     1
+        1  204941492    0    1     8                       2             32300  1359038290000     0
+        """
+
+        def read_single_county_data(county_fips: str) -> pd.DataFrame:
+            location_dir = os.path.join(self.path_to_pop, county_fips)
+            person_household_file = os.path.join(location_dir, "person-household.txt")
+            if not os.path.isfile(person_household_file):
+                raise FileNotFoundError(
+                    f"person-household file does not exist for county {county_fips}"
+                )
+            person_household_df = (
+                pd.read_csv(person_household_file)
+                # Simplify subsequent joins to results of `SynthPop.load_people`
+                .rename(columns={"PERSON": "ID"})
+            )
+            return person_household_df
+
+        return pd.concat(
+            [read_single_county_data(fc) for fc in self._locations_to_dirs(locations)]
+        )
+
     def load_gq_people(self, locations: List[str]) -> pd.DataFrame:
         """
         Return a DataFrame of people in group quaters associated with
@@ -241,9 +296,71 @@ class SynthPop(object):
             df = pd.read_csv(os.path.join(self.path_to_pop, dir, "gq_person.txt"))
             gq_people = pd.concat((gq_people, df), ignore_index=True)
 
-        return gq_people
+        # Read metadata about group quarters themselves
+        gq_data = pd.concat(
+            [
+                self._group_quarter_data(gq_type, locations)
+                for gq_type in self._group_quarter_types()
+            ]
+        )
 
-    
+        return gq_people.merge(
+            gq_data, how="left", left_on="ID", right_on="PERSON"
+        ).drop(columns="PERSON")
+
+    def _group_quarter_types(self) -> List[str]:
+        """List of group quarter types represented in the synth pop.
+
+        E.g. `barracks`, `college_dorm` etc.
+        """
+        group_meta_file = os.path.join(
+            self.path_to_pop, "metadata", "group_metadata.txt"
+        )
+        with open(group_meta_file, "r") as f:
+            next(f)  # skip header line
+            return [
+                m.group(1)
+                for m in (
+                    re.match("[a-zA-Z_-]*,person-([a-zA-Z_-]*).txt", l) for l in f
+                )
+                if m.group(1) not in ["grade", "school", "workplace"]
+            ]
+
+    def _group_quarter_data(
+        self, group_quarter_type: str, locations: List[str]
+    ) -> pd.DataFrame:
+        def read_single_county_data(
+            group_quarter_type: str, county_fips: str
+        ) -> pd.DataFrame:
+            location_dir = os.path.join(self.path_to_pop, county_fips)
+            person_group_quarter_file = os.path.join(
+                location_dir, f"person-{group_quarter_type}.txt"
+            )
+            group_quarter_block_group_file = os.path.join(
+                location_dir, f"{group_quarter_type}-block_group.txt"
+            )
+            for f in [person_group_quarter_file, group_quarter_block_group_file]:
+                if not os.path.isfile(f):
+                    raise FileNotFoundError(
+                        f"Group quartes file {f} does not exist for county "
+                        f"{county_fips}"
+                    )
+            person_group_quarter_df = pd.read_csv(person_group_quarter_file)
+            group_quarter_block_group_df = pd.read_csv(group_quarter_block_group_file)
+            return (
+                person_group_quarter_df.merge(
+                    group_quarter_block_group_df, on="PLACE", how="left"
+                )
+                .rename(columns={"CONTAINER": "Block_Group"})
+                .assign(gq_type=group_quarter_type)
+            )
+        return pd.concat(
+            [
+                read_single_county_data(group_quarter_type, fc)
+                for fc in self._locations_to_dirs(locations)
+            ]
+        )
+
     def population_count(
         self, locations: List[str], include_gq_people: bool = True
     ) -> int:
@@ -412,7 +529,26 @@ class SynthPop(object):
             df = pd.read_csv(os.path.join(self.path_to_pop, dir, "household.txt"))
             households = pd.concat((households, df), ignore_index=True)
 
-        return households
+        return (
+            households.merge(
+                self._household_block_group_xref(locations),
+                left_on="ID",
+                right_on="PLACE",
+                how="left",
+            )
+            .drop(columns=["PLACE"])
+            .rename(columns={"CONTAINER": "Block_Group"})
+        )
+
+    def _household_block_group_xref(self, locations: List[str]) -> pd.DataFrame:
+        filepaths = (
+            os.path.join(self.path_to_pop, d, "household-block_group.txt")
+            for d in self._locations_to_dirs(locations)
+        )
+        return (
+            pd.concat([pd.read_csv(f) for f in filepaths])
+        )
+
     
     def _locations_to_dirs(self, locations: List[str]) -> Set[str]:
         """
