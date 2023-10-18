@@ -496,7 +496,49 @@ class SynthPop(object):
             workplaces = pd.concat((workplaces, df), ignore_index=True)
 
         return workplaces.drop_duplicates()
-    
+
+    def load_people_workplace_xref(self, locations: List[str]) -> pd.DataFrame:
+        """A DataFrame containing a mapping from agent IDs to workplace IDs for
+        the specified locations.
+
+        Returned columns are:
+            * `ID`: ID of the agent, corresponding to the `ID` field in the
+              table returned by `SynthPop.load_people`
+            * `PLACE`: ID of the person's workplace (or np.nan if they don't
+               have a household)
+            * `ROLE`: ID of the person's role within the workplace (or np.nan
+               if they don't have a workplace)
+
+        Examples
+        --------
+        >>> person_df = pop.load_people(["Loving_County_TX"], include_gq_people=False)
+        >>> wp_xref_df = pop.load_people_workplace_xref(["Loving_County_TX"])
+        >>> person_df.merge(wp_xref_df, on='ID', how='left').head(2)
+                  ID  AGE  sex  race  household_relationship  household_income          PLACE  ROLE
+        0  204941490   45    1     8                       0             32300  5157364350000   0.0
+        1  204941492    0    1     8                       2             32300            NaN   NaN
+        """
+
+        def read_single_county_data(county_fips: str) -> pd.DataFrame:
+            location_dir = os.path.join(self.path_to_pop, county_fips)
+            person_workplace_file = os.path.join(location_dir, "person-workplace.txt")
+            if not os.path.isfile(person_workplace_file):
+                raise FileNotFoundError(
+                    f"person-workplace file does not exist for county {county_fips}"
+                )
+            person_workplace_df = (
+                pd.read_csv(
+                    person_workplace_file,
+                    dtype={"PERSON": int, "PLACE": str, "ROLE": int},
+                )
+                # Simplify subsequent joins to results of `SynthPop.load_people`
+                .rename(columns={"PERSON": "ID"})
+            )
+            return person_workplace_df
+
+        return pd.concat(
+            [read_single_county_data(fc) for fc in self._locations_to_dirs(locations)]
+        )
 
     def load_households(self, locations: List[str]) -> pd.DataFrame:
         """
