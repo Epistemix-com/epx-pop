@@ -87,3 +87,21 @@ def test_load_people_household_xref(synth_pop_2010: SynthPop) -> None:
         ["San_Benito_County_CA", "Santa_Clara_County_CA"]
     )
     assert len(xref_df.index) == 55208 + 1746026
+
+
+def test_load_people_workplace_xref(synth_pop_2010: SynthPop) -> None:
+    xref_df = synth_pop_2010.load_people_workplace_xref(["Loving_County_TX"])
+    assert len(xref_df.index) == 52
+    assert list(xref_df.columns) == ["ID", "PLACE", "ROLE"]
+
+    # Single name with two FIPS codes, 06069 06085
+    xref_df = synth_pop_2010.load_people_workplace_xref(
+        ["San_Jose-Sunnyvale-Santa_Clara_CA_MSA"]
+    )
+    assert len(xref_df.index) == 22704 + 798125
+
+    # Two names with a single FIPS code each
+    xref_df = synth_pop_2010.load_people_workplace_xref(
+        ["San_Benito_County_CA", "Santa_Clara_County_CA"]
+    )
+    assert len(xref_df.index) == 22704 + 798125
